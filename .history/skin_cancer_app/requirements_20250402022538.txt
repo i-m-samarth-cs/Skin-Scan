@@ -4,6 +4,5 @@ opencv-python==4.8.1.78
 matplotlib==3.8.2
 streamlit-option-menu==0.3.6
 streamlit-chat==0.1.1
-numpy>=1.26.0,<2
-pandas==2.1.3
+numpy>=1.26.0,<2  # Ensure compatibility with pandas
 streamlit==1.30.0
