@@ -1,0 +1,246 @@
+# Set page configuration must come first, before any other st commands
+import streamlit as st
+st.set_page_config(
+    page_title="SkinScan AI - Skin Cancer Detection",
+    page_icon="🔬",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items=None  # This will hide the hamburger menu
+)
+
+# Now import the rest
+import os
+from streamlit_option_menu import option_menu
+from pages import home, detection, patient_info, history, about, chatbot
+from utils.db_manager import create_tables
+import speech_recognition as sr
+import base64
+
+# Hide default Streamlit menu and footer using a more reliable method
+def hide_streamlit_elements():
+    # CSS to hide the default menu, footer, and header
+    hide_streamlit_style = """
+        <style>
+        #MainMenu {visibility: hidden !important; display: none !important;}
+        footer {visibility: hidden !important; display: none !important;}
+        header {visibility: hidden !important; display: none !important;}
+        div[data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
+        div[data-testid="stDecoration"] {visibility: hidden !important; display: none !important;}
+        div[data-testid="stStatusWidget"] {visibility: hidden !important; display: none !important;}
+        section[data-testid="stSidebar"] > div > button[kind="header"] {display: none !important;}
+        .css-18e3th9 {padding-top: 0rem !important;}
+        .block-container {padding-top: 1rem !important;}
+        .viewerBadge_link__1S137 {display: none !important;}
+        .appview-container .main .block-container {padding-top: 1rem !important;}
+        #root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem !important;}
+        </style>
+        """
+    # Inject the CSS with markdown
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+    
+    # Alternative method to hide elements
+    hide_menu_hack_js = """
+    <script>
+    // Wait for the DOM to load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to hide elements
+        function hideElements() {
+            // Find elements to hide
+            const elementsToHide = [
+                document.querySelector('#MainMenu'),
+                document.querySelector('footer'),
+                document.querySelector('header'),
+                ...document.querySelectorAll('[data-testid="stToolbar"]'),
+                ...document.querySelectorAll('[data-testid="stDecoration"]'),
+                ...document.querySelectorAll('[data-testid="stStatusWidget"]'),
+                ...document.querySelectorAll('.viewerBadge_link__1S137')
+            ];
+            
+            // Hide each element if it exists
+            elementsToHide.forEach(el => {
+                if (el) {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                }
+            });
+        }
+        
+        // Initial hide
+        hideElements();
+        
+        // Create a mutation observer to watch for changes to the body
+        const observer = new MutationObserver(function(mutations) {
+            hideElements();
+        });
+        
+        // Start observing the document body for changes
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        // Also add a periodic check for elements that might be added dynamically
+        setInterval(hideElements, 1000);
+    });
+    </script>
+    """
+    
+    # Inject JavaScript to hide menu
+    st.markdown(hide_menu_hack_js, unsafe_allow_html=True)
+
+# Custom CSS loader
+def load_css():
+    css_path = os.path.join("assets", "css", "style.css")
+    if os.path.exists(css_path):
+        with open(css_path, "r") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    else:
+        st.warning("CSS file not found. Please make sure assets/css/style.css exists.")
+
+# Initialize database
+def initialize_db():
+    create_tables()
+    if 'patient_id' not in st.session_state:
+        st.session_state.patient_id = None
+    
+    # Initialize page state if not present
+    if 'page' not in st.session_state:
+        st.session_state.page = "Home"
+
+# Speech recognition function
+def recognize_speech():
+    """Recognize speech using the microphone"""
+    try:
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            st.info("Listening... Speak now!")
+            recognizer.adjust_for_ambient_noise(source, duration=1)
+            audio = recognizer.listen(source, timeout=5, phrase_time_limit=5)
+        
+        command = recognizer.recognize_google(audio).lower()
+        st.success(f"You said: {command}")
+        return command
+    except sr.UnknownValueError:
+        st.error("Sorry, could not understand the command.")
+    except sr.RequestError:
+        st.error("Error connecting to the speech recognition service.")
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+    
+    return None
+
+# Voice navigation function
+def navigate_with_voice(command):
+    """Navigate to different pages based on voice command"""
+    if any(keyword in command for keyword in ["home", "main", "start"]):
+        st.session_state.page = "Home"
+    elif any(keyword in command for keyword in ["skin check", "detection", "scan"]):
+        st.session_state.page = "Skin Cancer Detection"
+    elif any(keyword in command for keyword in ["patient", "portal", "info"]):
+        st.session_state.page = "Patient Information"
+    elif any(keyword in command for keyword in ["history", "records", "past"]):
+        st.session_state.page = "History"
+    elif any(keyword in command for keyword in ["chat", "bot", "assistant"]):
+        st.session_state.page = "Chatbot"
+    elif any(keyword in command for keyword in ["about", "info", "help"]):
+        st.session_state.page = "About"
+    else:
+        st.warning("Command not recognized. Please try again.")
+        return False
+    return True
+
+# Application navigation sidebar
+def navigation():
+    with st.sidebar:
+        logo_path = os.path.join("assets", "images", "logo.png")
+        if os.path.exists(logo_path):
+            st.image(logo_path, width=200)
+        else:
+            st.warning("Logo image not found.")
+        
+        # Get the current page from session state if set by voice or button
+        default_idx = 0
+        page_options = ["Home", "Skin Cancer Detection", "Patient Information", "History", "Chatbot", "About"]
+        
+        if st.session_state.page in page_options:
+            default_idx = page_options.index(st.session_state.page)
+        
+        selected = option_menu(
+            menu_title="Main Menu",
+            options=page_options,
+            icons=["house", "scan", "person", "clock-history", "chat", "info-circle"],
+            menu_icon="menu-app",
+            default_index=default_idx,
+            styles={
+                "container": {"padding": "5!important", "background-color": "#f0f2f6"},
+                "icon": {"color": "orange", "font-size": "25px"},
+                "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
+                "nav-link-selected": {"background-color": "#2E86C1"},
+            }
+        )
+        
+        # Update session state with the selected page
+        st.session_state.page = selected
+        
+        # Voice control section
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("Voice Navigation")
+        
+        if "voice_control" not in st.session_state:
+            st.session_state.voice_control = False
+        
+        col1, col2 = st.sidebar.columns([1, 3])
+        with col1:
+            mic_icon = "🎤" if not st.session_state.voice_control else "🔴"
+            if st.button(mic_icon):
+                st.session_state.voice_control = not st.session_state.voice_control
+                st.rerun()
+        
+        with col2:
+            if st.session_state.voice_control:
+                st.write("Voice enabled")
+                if st.button("Speak Now"):
+                    command = recognize_speech()
+                    if command and navigate_with_voice(command):
+                        st.rerun()
+            else:
+                st.write("Voice disabled")
+        
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### Patient ID")
+        
+        if st.session_state.patient_id:
+            st.sidebar.success(f"Current Patient: {st.session_state.patient_id}")
+            if st.sidebar.button("Clear Patient"):
+                st.session_state.patient_id = None
+                st.rerun()
+        else:
+            st.sidebar.warning("No patient selected")
+            
+        st.sidebar.markdown("---")
+        st.sidebar.info("This application is for educational purposes only and should not replace professional medical advice.")
+        st.sidebar.markdown("© 2025 SkinScan AI")
+        
+    return selected
+
+# Main application function
+def main():
+    # Call this before any other Streamlit elements
+    hide_streamlit_elements()
+    load_css()
+    initialize_db()
+    selected = navigation()
+    
+    # Render the selected page
+    if selected == "Home":
+        home.show()
+    elif selected == "Skin Cancer Detection":
+        detection.show()
+    elif selected == "Patient Information":
+        patient_info.show()
+    elif selected == "History":
+        history.show()
+    elif selected == "Chatbot":
+        chatbot.show()
+    elif selected == "About":
+        about.show()
+
+if __name__ == "__main__":
+    main()
