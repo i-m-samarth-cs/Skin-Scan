@@ -13,4 +13,3 @@ tensorflow==2.16.2
 google-cloud-translate==3.0.2
 SpeechRecognition==3.10.0
 pathlib==1.0.1
-pyaudio==0.2.13
