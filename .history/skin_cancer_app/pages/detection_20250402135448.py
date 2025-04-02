@@ -402,8 +402,9 @@ def show():
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
                     
-                    # Save to session state
-                    st.session_state.uploaded_image = file_path   
+                    
+                        # Save to session state
+                        st.session_state.uploaded_image = file_path   
 
                     # Display the uploaded image - adding error handling
                     try:

@@ -368,73 +368,50 @@ def show():
     # Create tabs for different stages
     tab1, tab2, tab3 = st.tabs(["Upload Image", "Analysis Results", "Save & Report"])
 
-    with tab1:
-        st.subheader("Upload Skin Lesion Image")
+    with col1:
+    if uploaded_file is not None:
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs("data/uploaded_images", exist_ok=True)
 
-        # Instructions
-        st.markdown("""
-        <div class="info-panel">
-            <h3>📸 Image Guidelines:</h3>
-            <ul>
-                <li>Use good lighting to capture clear details</li>
-                <li>Focus directly on the skin lesion</li>
-                <li>Include some surrounding normal skin for contrast</li>
-                <li>Use a ruler or coin for size reference if possible</li>
-                <li>Avoid shadows or glare</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+            # Save the uploaded file
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_path = f"data/uploaded_images/{timestamp}_{uploaded_file.name}"
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
 
-        # Upload image section
-        uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "jpeg", "png"])
+            # Save to session state - IMPORTANT: This should be outside the nested try/except
+            st.session_state.uploaded_image = file_path
 
-        col1, col2 = st.columns(2)
+            # Display the uploaded image - adding error handling
+            try:
+                # Reset the file pointer to the beginning
+                uploaded_file.seek(0)
+        
+                # Read the image using PIL
+                image = Image.open(uploaded_file)
+        
+                # Convert to RGB if needed (handles RGBA or other formats)
+                if image.mode != "RGB":
+                    image = image.convert("RGB")
+        
+                # Display with error handling
+                st.image(image, caption="Uploaded Image", width=None)
+            except Exception as e:
+                st.error(f"Error displaying image: {str(e)}")
+                st.warning("Try uploading a different image format (JPG or PNG recommended)")
 
-        with col1:
-            if uploaded_file is not None:
-                try:
-                    # Create directory if it doesn't exist
-                    os.makedirs("data/uploaded_images", exist_ok=True)
+            # Lesion location input
+            st.session_state.lesion_location = st.selectbox(
+                "Lesion Location",
+                ["Select location", "Face", "Scalp", "Ear", "Neck", "Chest", "Back",
+                 "Abdomen", "Trunk", "Upper Extremity", "Lower Extremity", "Hand", "Foot", "Other"]
+            )
+            # Notes input
+            st.session_state.notes = st.text_area("Additional Notes", height=100)
 
-                    # Save the uploaded file
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    file_path = f"data/uploaded_images/{timestamp}_{uploaded_file.name}"
-                    with open(file_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    
-                    # Save to session state
-                    st.session_state.uploaded_image = file_path   
-
-                    # Display the uploaded image - adding error handling
-                    try:
-                        # Reset the file pointer to the beginning
-                        uploaded_file.seek(0)
-                
-                        # Read the image using PIL
-                        image = Image.open(uploaded_file)
-                
-                        # Convert to RGB if needed (handles RGBA or other formats)
-                        if image.mode != "RGB":
-                            image = image.convert("RGB")
-                
-                        # Display with error handling
-                        st.image(image, caption="Uploaded Image", width=None)
-                    except Exception as e:
-                        st.error(f"Error displaying image: {str(e)}")
-                        st.warning("Try uploading a different image format (JPG or PNG recommended)")
-
-
-                        # Lesion location input
-                        st.session_state.lesion_location = st.selectbox(
-                        "Lesion Location",
-                        ["Select location", "Face", "Scalp", "Ear", "Neck", "Chest", "Back",
-                         "Abdomen", "Trunk", "Upper Extremity", "Lower Extremity", "Hand", "Foot", "Other"]
-                    )
-                    # Notes input
-                    st.session_state.notes = st.text_area("Additional Notes", height=100)
-
-                except Exception as e:
-                    st.error(f"Error processing uploaded file: {str(e)}")
+        except Exception as e:
+            st.error(f"Error processing uploaded file: {str(e)}")
 
         with col2:
             if st.session_state.uploaded_image:
