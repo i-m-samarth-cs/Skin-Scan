@@ -397,43 +397,44 @@ def show():
                     os.makedirs("data/uploaded_images", exist_ok=True)
 
                     # Save the uploaded file
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    file_path = f"data/uploaded_images/{timestamp}_{uploaded_file.name}"
-                    with open(file_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_path = f"data/uploaded_images/{timestamp}_{uploaded_file.name}"
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
 
-                    # Display the uploaded image - adding error handling
-                    try:
-                        # Reset the file pointer to the beginning
-                        uploaded_file.seek(0)
+            # Display the uploaded image - adding error handling
+            try:
+                # Reset the file pointer to the beginning
+                uploaded_file.seek(0)
                 
-                        # Read the image using PIL
-                        image = Image.open(uploaded_file)
+                # Read the image using PIL
+                image = Image.open(uploaded_file)
                 
-                        # Convert to RGB if needed (handles RGBA or other formats)
-                        if image.mode != "RGB":
-                            image = image.convert("RGB")
+                # Convert to RGB if needed (handles RGBA or other formats)
+                if image.mode != "RGB":
+                    image = image.convert("RGB")
                 
-                        # Display with error handling
-                        st.image(image, caption="Uploaded Image", use_container_width=True)
-                    except Exception as e:
-                        st.error(f"Error displaying image: {str(e)}")
-                        st.warning("Try uploading a different image format (JPG or PNG recommended)")
+                # Display with error handling
+                st.image(image, caption="Uploaded Image", use_container_width=True)
+            except Exception as e:
+                st.error(f"Error displaying image: {str(e)}")
+                st.warning("Try uploading a different image format (JPG or PNG recommended)")
 
-                        # Save to session state
-                        st.session_state.uploaded_image = file_path
+            # Save to session state
+            st.session_state.uploaded_image = file_path
 
-                        # Lesion location input
-                        st.session_state.lesion_location = st.selectbox(
-                        "Lesion Location",
-                        ["Select location", "Face", "Scalp", "Ear", "Neck", "Chest", "Back",
-                         "Abdomen", "Trunk", "Upper Extremity", "Lower Extremity", "Hand", "Foot", "Other"]
-                    )
-                    # Notes input
-                    st.session_state.notes = st.text_area("Additional Notes", height=100)
+            # Lesion location input
+            st.session_state.lesion_location = st.selectbox(
+                "Lesion Location",
+                ["Select location", "Face", "Scalp", "Ear", "Neck", "Chest", "Back",
+                 "Abdomen", "Trunk", "Upper Extremity", "Lower Extremity", "Hand", "Foot", "Other"]
+            )
 
-                except Exception as e:
-                    st.error(f"Error processing uploaded file: {str(e)}")
+            # Notes input
+            st.session_state.notes = st.text_area("Additional Notes", height=100)
+
+        except Exception as e:
+            st.error(f"Error processing uploaded file: {str(e)}")
 
         with col2:
             if st.session_state.uploaded_image:

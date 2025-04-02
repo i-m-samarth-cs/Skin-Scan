@@ -429,11 +429,12 @@ def show():
                         ["Select location", "Face", "Scalp", "Ear", "Neck", "Chest", "Back",
                          "Abdomen", "Trunk", "Upper Extremity", "Lower Extremity", "Hand", "Foot", "Other"]
                     )
-                    # Notes input
-                    st.session_state.notes = st.text_area("Additional Notes", height=100)
 
-                except Exception as e:
-                    st.error(f"Error processing uploaded file: {str(e)}")
+            # Notes input
+            st.session_state.notes = st.text_area("Additional Notes", height=100)
+
+        except Exception as e:
+            st.error(f"Error processing uploaded file: {str(e)}")
 
         with col2:
             if st.session_state.uploaded_image:
