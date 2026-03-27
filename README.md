@@ -5,6 +5,7 @@ Features
 
 AI-Powered Skin Analysis: Upload photos of skin concerns and receive preliminary assessments based on machine learning algorithms.
 
+
 Personalized Skin Tracking: Create a profile to monitor changes in moles, spots, and skin conditions over time.
 Body Mapping: Document skin concerns on a 3D body model for comprehensive tracking.
 
