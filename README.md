@@ -2,7 +2,6 @@ SkinScan
 SkinScan is a mobile application designed to help users monitor and track changes in their skin over time, with a focus on early detection of potentially concerning skin conditions.
 Features
 
-
 AI-Powered Skin Analysis: Upload photos of skin concerns and receive preliminary assessments based on machine learning algorithms.
 
 Personalized Skin Tracking: Create a profile to monitor changes in moles, spots, and skin conditions over time.
